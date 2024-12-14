@@ -1,13 +1,9 @@
-import jwtDecode from 'jwt-decode';
-import { apiRequest } from './Api';
+import { jwtDecode } from 'jwt-decode';
+import { apiRequest } from './api';
 
 const TOKEN_KEY = 'auth-token';
 
-function storeToken(token) {
-    localStorage.setItem(TOKEN_KEY, token);
-}
-
-async function getToken(token) {
+async function getToken() {
     const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) return null;
@@ -30,13 +26,7 @@ async function getToken(token) {
 async function isAuthenticated() {
     const token = await getToken();
 
-    if (!token) return false;
-
-    const decodedToken = jwtDecode(token);
-
-    const currentTime = Math.floor(Date.now() / 1000);
-
-    return decodedToken.exp > currentTime;
+    return !!token;
 }
 
 function isInRole(role) {
@@ -48,6 +38,11 @@ function isInRole(role) {
 
     const roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
     return Array.isArray(roles) ? roles.includes(role) : roles === role;
+}
+
+function logOut() {
+    console.log('removing item');
+    localStorage.removeItem(TOKEN_KEY);
 }
 
 async function refreshToken() {
@@ -71,12 +66,17 @@ async function refreshToken() {
     }
 }
 
+function storeToken(token) {
+    localStorage.setItem(TOKEN_KEY, token);
+}
+
 export function useAuth() {
     return {
-        storeToken,
         getToken,
         isAuthenticated,
         isInRole,
-        refreshToken
+        logOut,
+        refreshToken,
+        storeToken
     };
 }

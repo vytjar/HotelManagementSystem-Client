@@ -15,6 +15,6 @@
 </template>
   
 <script setup>
-    import { snackbar } from '@/utils/Snackbar';
+    import { snackbar } from '@/utils/snackbar';
 </script>
   

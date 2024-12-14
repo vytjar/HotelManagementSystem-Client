@@ -15,17 +15,22 @@ const apiClient = axios.create({
  * @param {string} method - HTTP method (GET, POST, PUT, DELETE, etc.).
  * @param {Object} [data] - Request body for POST, PUT, etc.
  * @param {Object} [params] - Query parameters for GET, DELETE, etc.
- * @param {Object} [headers] - Additional request headers.
  * @returns {Promise} - Axios response promise.
  */
-export const apiRequest = async ({ path, method = 'GET', data = {}, params = {}, headers = {} }) => {
+export const apiRequest = async ({ path, method = 'GET', data = {}, token = null, params = {} }) => {
     try {
+        const headers = {};
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await apiClient({
             url: path,
             method,
             data,
             params,
-            headers,
+            headers
         });
 
         return response.data;

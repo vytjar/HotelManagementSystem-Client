@@ -41,12 +41,14 @@
 </template>
   
 <script setup>
-    import { apiRequest } from '@/utils/Api';
-	import { isRequired } from '@/utils/Rules';
+    import { apiRequest } from '@/utils/api';
+	import { isRequired } from '@/utils/rules';
     import { ref } from 'vue';
-	import { showSuccess, showError } from '@/utils/Snackbar';
+	import { showSuccess, showError } from '@/utils/snackbar';
+	import { useAuth } from '@/utils/auth';
 	import { useRouter } from 'vue-router';
 
+	const auth = useAuth();
 	const router = useRouter();
 
 	const form = ref(null);
@@ -57,7 +59,6 @@
 		const isValid = (await form.value.validate()).valid;
 
 		if (isValid) {
-			console.log('hi');
 			try {
 				var response = await apiRequest({
 					path: '/users/login',
@@ -68,9 +69,10 @@
 					}
 				});
 
-				showSuccess('User logged in successfully.');
+				auth.storeToken(response.token);
 
-				router.push('/');
+				await router.push('/');
+				location.reload();
 			} catch(e) {
 				if (e?.response?.data) {
 					showError(`User could not be logged in: ${e.response.data}`);

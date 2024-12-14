@@ -75,11 +75,11 @@
 </template>
 
 <script setup>
-	import { apiRequest } from '@/utils/Api';
+	import { apiRequest } from '@/utils/api';
 	import { ref } from 'vue';
-	import { showError } from '@/utils/Snackbar';
+	import { showError } from '@/utils/snackbar';
 	import { useRouter } from 'vue-router';
-	import { validateEmail, validateMaxLength, validatePassword, isRequired } from '@/utils/Rules';
+	import { validateEmail, validateMaxLength, validatePassword, isRequired } from '@/utils/rules';
 
 	const router = useRouter();
 

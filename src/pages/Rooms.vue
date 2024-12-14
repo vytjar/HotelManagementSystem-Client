@@ -36,7 +36,7 @@
 </template>
   
 <script setup>
-    import { apiRequest } from '@/utils/Api';
+    import { apiRequest } from '@/utils/api';
     import { ref } from 'vue';
     import { useRoute, useRouter } from 'vue-router';
 

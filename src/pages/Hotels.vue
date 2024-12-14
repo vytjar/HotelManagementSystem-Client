@@ -28,9 +28,9 @@
 </template>
 
 <script setup>
-    import { apiRequest } from '@/utils/Api';
+    import { apiRequest } from '@/utils/api';
     import { ref } from 'vue';
-    import { showError } from '@/utils/Snackbar';
+    import { showError } from '@/utils/snackbar';
     import { useRouter } from 'vue-router';
 
     const router = useRouter();
@@ -47,6 +47,7 @@
                 method: 'GET'
             });
         } catch (e) {
+            console.log(e);
             if (e?.response?.data) {
                 showError(`Could not load hotels: ${e.respone.data}`);
             } else {

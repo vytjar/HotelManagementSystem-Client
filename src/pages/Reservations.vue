@@ -1,61 +1,76 @@
 <template>
     <v-container>
-        <v-row justify="center">
-            <v-col cols="12" md="8">
-                <v-sheet elevation="2" class="pa-4">
-                    <div class="calendar-header d-flex justify-space-between align-center">
-                        <v-btn
-                            :disabled="currentMonth === today.getMonth() && currentYear === today.getFullYear()"
-                            icon
-                            @click="goToPreviousMonth"
-                        >
-                            <v-icon>mdi-chevron-left</v-icon>
-                        </v-btn>
+        <v-col cols="12" sm="12" style="height: 50vh;">
+            <v-row class="d-flex justify-center mb-10 mt-10">
+                <h1>Reservation times of the room {{ room.roomNumber }}</h1>
+            </v-row>
 
-                        <div class="month-year">{{ currentMonthYear }}</div>
+            <v-row justify="center">
+                <v-col cols="12" md="12">
+                    <v-sheet elevation="2" class="pa-4">
+                        <div class="mb-4 d-flex justify-space-between align-center">
+                            <v-btn
+                                :disabled="currentMonth === today.getMonth() && currentYear === today.getFullYear()"
+                                icon
+                                @click="goToPreviousMonth"
+                            >
+                                <v-icon>mdi-chevron-left</v-icon>
+                            </v-btn>
 
-                        <v-btn icon @click="goToNextMonth">
-                            <v-icon>mdi-chevron-right</v-icon>
-                        </v-btn>
-                    </div>
+                            <div class="month-year">{{ currentMonthYear }}</div>
 
-                    <div class="calendar-grid">
-                        <div v-for="day in daysOfWeek" :key="day" class="calendar-cell day-header">
-                            {{ day }}
+                            <v-btn icon @click="goToNextMonth">
+                                <v-icon>mdi-chevron-right</v-icon>
+                            </v-btn>
+                        </div>
+
+                        <div class="calendar-grid" style="height: 50vh">
+                            <div v-for="day in daysOfWeek" :key="day" class="calendar-cell day-header">
+                                {{ day }}
+                            </div>
+                            
+                            <div
+                                v-for="(day, index) in paddedCalendarDays"
+                                :key="index"
+                                class="calendar-cell"
+                                :class="getDateClass(day)"
+                                @click="day && isValidSelection(day) && selectDate(day)"
+                            >
+                                {{ day ? day.getDate() : '' }}
+                            </div>
                         </div>
                         
-                        <div
-                            v-for="(day, index) in paddedCalendarDays"
-                            :key="index"
-                            class="calendar-cell"
-                            :class="getDateClass(day)"
-                            @click="day && isValidSelection(day) && selectDate(day)"
-                        >
-                            {{ day ? day.getDate() : '' }}
-                        </div>
-                    </div>
+                        <div class="mt-4 d-flex justify-center">
+                            <v-btn
+                                v-if="isAuthenticated"
+                                :disabled="!canReserve"
+                                color="primary"
+                                @click="handleReservation"
+                            >
+                                Reserve
+                            </v-btn>
 
-                    <v-btn
-                        :disabled="!canReserve"
-                        class="mt-4"
-                        color="primary"
-                        @click="handleReservation"
-                    >
-                        Reserve
-                    </v-btn>
-                </v-sheet>
-            </v-col>
-        </v-row>
+                            <div v-else>
+                                <span>Log in to perform reservation.</span>
+                            </div>
+                        </div>
+                    </v-sheet>
+                </v-col>
+            </v-row>
+        </v-col>
     </v-container>
 </template>
   
 <script setup>
-    import { apiRequest } from '@/utils/Api';
+    import { apiRequest } from '@/utils/api';
     import { ref, computed, onMounted } from 'vue';
-    import { showError, showSuccess } from '@/utils/Snackbar';
+    import { showError } from '@/utils/snackbar';
+    import { useAuth } from '@/utils/auth';
     import { useRoute } from 'vue-router';
 
+    const auth = useAuth();
     const route = useRoute();
+
     const roomId = route.params.roomId;
 
     const today = new Date();
@@ -64,10 +79,31 @@
     const currentYear = ref(today.getFullYear());
     const currentMonth = ref(today.getMonth());
 
+    const calendarDays = ref(getCalendarDays(currentYear.value, currentMonth.value));
+    const isAuthenticated = ref(false);
+    const reservedDates = ref([]);
+    const room = ref({});
     const selectedStartDate = ref(null);
     const selectedEndDate = ref(null);
-    const calendarDays = ref(getCalendarDays(currentYear.value, currentMonth.value));
-    const reservedDates = ref([]);
+
+    loadRoom();
+    loadReservationsForMonth(currentYear.value, currentMonth.value);
+
+    async function loadRoom() {
+        try {
+            room.value = await apiRequest({
+                path: `/rooms/${roomId}`,
+                method: 'GET'
+            });
+
+        } catch (e) {
+            if (e?.response?.data) {
+                showError(`Could not load room information: ${e.respone.data}`);
+            } else {
+                showError('Could not load room information');
+            }
+        }
+    }
 
     async function loadReservationsForMonth(year, month) {
         const fromDate = new Date(year, month, 1).toISOString().split('T')[0];
@@ -106,8 +142,8 @@
         }
     }
 
-    onMounted(() => {
-        loadReservationsForMonth(currentYear.value, currentMonth.value);
+    onMounted(async () => {
+        isAuthenticated.value = await auth.isAuthenticated();
     });
 
     function getCalendarDays(year, month) {
@@ -234,18 +270,28 @@
             return;
         }
 
+        const token = await auth.getToken();
+
+        if (!token) {
+            showError('Could not create reservation. You are not authenticated.');
+            return;
+        }
+
         try {
-            const response = await apiRequest({
+            await apiRequest({
                 path: '/reservations',
                 method: 'POST',
                 data: {
-                checkInDate: selectedStartDate.value.toISOString(),
-                checkOutDate: selectedEndDate.value.toISOString(),
+                    checkInDate: selectedStartDate.value.toISOString(),
+                    checkOutDate: selectedEndDate.value.toISOString(),
+                    guestCount: 1, //fix later
+                    roomId: roomId
                 },
+                token: token
             });
 
-            showSuccess(`Reservation created: #${response.id}`);
             resetSelection();
+            location.reload();
         } catch (e) {
             showError('Failed to create reservation.');
         }
@@ -274,22 +320,18 @@
 </script>
     
 <style scoped>
-    .calendar-header {
-        margin-bottom: 16px;
-    }
-
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
+        gap: 4px;
     }
 
     .calendar-cell {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 60px;
-        height: 60px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         cursor: pointer;
         border: 1px solid transparent;
