@@ -40,7 +40,6 @@
     loadHotels();
 
     async function loadHotels() {
-        console.log('hi');
         try {
             hotels.value = await apiRequest({
                 path: '/hotels',

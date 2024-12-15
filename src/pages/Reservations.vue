@@ -1,13 +1,13 @@
 <template>
-    <v-container>
-        <v-col cols="12" sm="12" style="height: 50vh;">
+    <v-container fluid>
+        <v-col cols="12" sm="12">
             <v-row class="d-flex justify-center mb-10 mt-10">
                 <h1>Reservation times of the room {{ room.roomNumber }}</h1>
             </v-row>
 
             <v-row justify="center">
                 <v-col cols="12" md="12">
-                    <v-sheet elevation="2" class="pa-4">
+                    <v-sheet elevation="2" class="pa-4" rounded>
                         <div class="mb-4 d-flex justify-space-between align-center">
                             <v-btn
                                 :disabled="currentMonth === today.getMonth() && currentYear === today.getFullYear()"

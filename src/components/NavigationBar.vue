@@ -4,6 +4,8 @@
         <v-btn class="ml-2" text to="/hotels">Hotels</v-btn>
         <v-spacer></v-spacer>
         <div v-if="isAuthenticated" style="height: 100%;">
+            <v-btn text to="/users">Users</v-btn>
+            <v-btn text to="/user">Profile</v-btn>
             <v-btn @click="logOut">Log out</v-btn>
         </div>
         

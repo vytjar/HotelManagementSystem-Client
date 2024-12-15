@@ -1,11 +1,13 @@
 <template>
-  <v-app> 
-    <NavigationBar/>
-    <v-main>
-      <router-view />
-    </v-main>
-    <Snackbar />
-  </v-app>
+	<v-app> 
+		<NavigationBar/>
+
+		<v-main>
+			<router-view :key="$route.fullPath"></router-view>
+		</v-main>
+		
+		<Snackbar />
+	</v-app>
 </template>
 
 <script setup>

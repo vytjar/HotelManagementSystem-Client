@@ -1,6 +1,6 @@
 <template>
     <v-container>
-        <v-row class="d-flex justify-center mb-10 mt-10">
+        <v-row class="d-flex justify-center mb-10 mt-10 pa-10">
             <h1>Rooms of the {{ hotel.name }} hotel</h1>
         </v-row>
 
@@ -62,9 +62,9 @@
             if (e?.response?.data) {
                 showError(`Could not load hotel information: ${e.respone.data}`);
             } else {
-                showError('Could not load hotel information');
+                showError('Could not load hotel information.');
             }
-        }    
+        }
     }
 
     async function loadRooms() {
@@ -77,7 +77,7 @@
             if (e?.response?.data) {
                 showError(`Could not load rooms: ${e.respone.data}`);
             } else {
-                showError('Could not load rooms');
+                showError('Could not load rooms.');
             }
         }
     }

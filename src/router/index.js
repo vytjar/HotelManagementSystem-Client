@@ -33,6 +33,21 @@ const routes = [
 		component: () => import('@/pages/Rooms.vue'),
 		name: 'Rooms',
 		path: '/hotels/:hotelId/rooms'
+	},
+	{
+		component: () => import('@/pages/user/User.vue'),
+		name: 'User',
+		path: '/user'
+	},
+	{
+		component: () => import('@/pages/user/User.vue'),
+		name: 'UserDetails',
+		path: '/users/:userId'
+	},
+	{
+		component: () => import('@/pages/user/Users.vue'),
+		name: 'Users',
+		path: '/users'
 	}
 ];
 
