@@ -1,4 +1,77 @@
 <template>
+    <v-dialog
+        v-model="dialogCancelation.visible"
+        max-width="400px"
+    >
+        <v-card v-if="dialogCancelation.reservation" rounded>
+            <v-card-title class="headline">
+                Reservation cancelation.
+            </v-card-title>
+
+            <v-card-text v-if="dialogCancelation.reservation">
+                <p>Are you sure you want to cancel the reservation at '{{ dialogCancelation.reservation.room?.hotel?.name || 'Unknown Hotel' }}'?</p>
+                
+                <p class="mt-4">Reservation date:</p>
+                <p>{{ formatDate(dialogCancelation.reservation.checkInDate) }} – {{ formatDate(dialogCancelation.reservation.checkOutDate) }}</p>
+            </v-card-text>
+
+            <v-card-actions>
+                <v-spacer></v-spacer>
+
+                <v-btn color="error" @click="cancelReservation(dialogCancelation.reservation)">
+                    Yes, Cancel
+                </v-btn>
+
+                <v-btn color="info" text @click="handleCloseDialogCancelation">
+                    No, Keep It
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog
+        v-model="dialogUpdate.visible"
+        max-width="500px"
+        @after-leave="handeCloseDialogUpdate"
+    >
+        <v-card rounded>
+            <v-card-title>
+                Updating reservation Reservation
+            </v-card-title>
+
+            <v-card-text>
+                <p>{{ dialogUpdate.reservation.room?.hotel?.name }}</p>
+                <p>{{ formatDate(dialogUpdate.reservation.checkInDate) }} – {{ formatDate(dialogUpdate.reservation.checkOutDate) }}</p>
+                <p>Room: {{ dialogUpdate.reservation.room?.roomNumber }}</p>
+                <p class="mt-8">Enter the guest count:</p>
+
+                <v-form
+                    ref="form"
+                >
+                    <v-text-field
+                        v-model="dialogUpdate.guestCount"
+                        :rules="[isRequired('Guest count'), max('Guest count', dialogUpdate.reservation.room?.capacity ?? 0), min('Guest count', 0)]"
+                        class="mt-4"
+                        label="Guest count"
+                        type="number"
+                        variant="underlined"
+                    >
+                    </v-text-field>
+                </v-form>
+            </v-card-text>
+
+            <v-card-actions>
+                <v-btn color="info" @click="update()">
+                    Update
+                </v-btn>
+
+                <v-btn color="error" @click="handeCloseDialogUpdate()">
+                    Close
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <v-container v-if="!loading" fluid>
         <v-sheet class="pa-4 ma-4" rounded>
             <v-row class="ma-4 d-flex justify-space-between align-center">
@@ -13,16 +86,16 @@
                             color="primary"
                             outlined
                             class="mr-2"
-                            @click="updateRoles"
+                            @click="handleUpdateRoles"
                         >
                             Update
                         </v-btn>
 
                         <v-btn
                             v-if="editing"
-                            color="secondary"
+                            color="error"
                             outlined
-                            @click="cancelEdit"
+                            @click="handleCancelEdit"
                         >
                             Cancel
                         </v-btn>
@@ -114,7 +187,37 @@
                                 <v-col
                                     class="d-flex align-center justify-end" cols="12" md="4"
                                 >
-                                    <!-- add actions or something like that?-->
+                                    <template v-if="userId">
+                                        <v-btn 
+                                            v-if="new Date(reservation.checkOutDate) >= now"
+                                            color="info"
+                                            outlined
+                                            @click="handleEditReservation(reservation)"
+                                        >
+                                            Edit
+                                        </v-btn>
+
+                                        <v-btn
+                                            v-if="new Date(reservation.checkOutDate) >= now"
+                                            color="error"
+                                            class="ma-4"
+                                            outlined
+                                            @click="handleCancelReservation(reservation)"
+                                        >
+                                            Cancel
+                                        </v-btn>
+                                    </template>
+
+                                    <template v-else>
+                                        <v-btn 
+                                            v-if="(new Date(reservation.checkInDate) - now) / (1000 * 60 * 60) >= 24"
+                                            color="error"
+                                            outlined
+                                            @click="handleCancelReservation(reservation)"
+                                        >
+                                            Cancel reservation
+                                        </v-btn>
+                                    </template>
                                 </v-col>
                             </v-row>
                         </v-card-text>
@@ -139,7 +242,8 @@
 
 <script setup>
     import { apiRequest } from '@/utils/api';
-    import { computed } from 'vue';
+    import { isRequired, max, min } from '@/utils/rules';
+    import { ref, computed, reactive } from 'vue';
     import { roles } from '@/constants/roles';
     import { showError } from '@/utils/snackbar';
     import { useAuth } from '@/utils/auth';
@@ -148,24 +252,116 @@
     const auth = useAuth();
     const route = useRoute();
     const userId = route.params.userId;
+    const now = new Date();;
 
     const editing = ref(false);
+    const form = ref(null);
+    // const guestCount = ref(0);
     const user = ref({});
     const requestsPending = ref(0);
     const selectedRoles = ref([]);
 
     const loading = computed(() => requestsPending.value > 0);
 
+    const { dialogCancelation, dialogUpdate } = initializeDialogs();
+
     loadUser();
 
-    function cancelEdit() {
+    function handleCancelEdit() {
         editing.value = false;
 
         selectedRoles.value = user.value.roles;
     }
 
+    async function handleUpdateRoles() {
+        try {
+            requestsPending.value++;
+            
+            await apiRequest({
+                path: '/users/assignRoles',
+                method: 'POST',
+                data: {
+                    roles: selectedRoles.value,
+                    userName: user.value.username
+                },
+                token: await auth.getToken()
+            });
+
+            user.value.roles = selectedRoles.value;
+        } catch (e) {
+            if (e?.response?.data) {
+                showError(`Could not update user roles: ${e.respone.data}`);
+            } else {
+                showError('Could not update user roles.');
+            }
+        } finally {
+            editing.value = false;
+            requestsPending.value--;
+        }
+    }
+
+    function handleCancelReservation(reservation) {
+        dialogCancelation.reservation = reservation;
+        dialogCancelation.visible = true;
+    }
+
+    function handleCloseDialogCancelation() {
+        dialogCancelation.reservation = null;
+        dialogCancelation.visible = false;
+    }
+
+    function handeCloseDialogUpdate() {
+        dialogUpdate.guestCount = 0;
+        dialogUpdate.reservation = null;
+        dialogUpdate.visible = false;
+    }
+
     function formatDate(date) {
         return new Date(date).toLocaleDateString();
+    }
+
+    function handleEditReservation(reservation) {
+        dialogUpdate.guestCount = reservation.guestCount;
+        dialogUpdate.reservation = reservation;
+        dialogUpdate.visible = true;
+    }
+
+    function initializeDialogs() {
+        const dialogCancelation = reactive({
+            reservation: null,
+            visible: false
+        });
+
+        const dialogUpdate = reactive({
+            guestCount: 0,
+            reservation: null,
+            visible: false
+        });
+
+        return { dialogCancelation, dialogUpdate };
+    }
+
+    async function cancelReservation(reservation) {
+        try {
+            requestsPending.value++;
+            
+            await apiRequest({
+                path: `/reservations/${reservation.id}`,
+                method: 'DELETE',
+                token: await auth.getToken()
+            });
+
+            location.reload();
+        } catch (e) {
+            if (e?.response?.data) {
+                showError(`Could not cancel reservation: ${e.respone.data}`);
+            } else {
+                showError('Could not cancel reservation.');
+            }
+        } finally {
+            editing.value = false;
+            requestsPending.value--;
+        }
     }
 
     async function loadUser() {
@@ -195,30 +391,36 @@
         }
     }
 
-    async function updateRoles() {
-        try {
-            requestsPending.value++;
-            
-            await apiRequest({
-                path: '/users/assignRoles',
-                method: 'POST',
-                data: {
-                    roles: selectedRoles.value,
-                    userName: user.value.username
-                },
-                token: await auth.getToken()
-            });
+    async function update() {
+		const isValid = (await form.value.validate()).valid;
 
-            user.value.roles = selectedRoles.value;
-        } catch (e) {
-            if (e?.response?.data) {
-                showError(`Could not update user roles: ${e.respone.data}`);
-            } else {
-                showError('Could not update user roles.');
+        if (isValid) {
+            requestsPending.value++;
+
+            const token = await auth.getToken();
+
+            try {
+                await apiRequest({
+                    path: '/reservations/update',
+                    method: 'PUT',
+                    data: {
+                        checkInDate: dialogUpdate.reservation.checkInDate,
+                        checkOutDate: dialogUpdate.reservation.checkOutDate,
+                        guestCount: dialogUpdate.guestCount,
+                        id: dialogUpdate.reservation.id,
+                        roomId: dialogUpdate.reservation.roomId
+                    },
+                    token: token
+                });
+
+                handeCloseDialogUpdate();
+                
+                location.reload();
+            } catch (e) {
+                showError('Failed to create reservation.');
+            } finally {
+                requestsPending.value--;
             }
-        } finally {
-            editing.value = false;
-            requestsPending.value--;
         }
     }
 </script>
@@ -255,4 +457,3 @@
         font-weight: bold;
     }
 </style>
-

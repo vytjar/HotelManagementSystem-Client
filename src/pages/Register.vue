@@ -96,7 +96,7 @@
 
 		if (isValid) {
 			try {
-				var response = await apiRequest({
+				await apiRequest({
 					path: '/users/register',
 					method: 'POST',
 					data : {

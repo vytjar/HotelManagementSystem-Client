@@ -1,4 +1,47 @@
 <template>
+    <v-dialog
+        v-model="dialogReservation"
+        max-width="500px"
+        @after-leave="handeCloseDialogReservation"
+    >
+        <v-card rounded>
+            <v-card-title>
+                Reservation
+            </v-card-title>
+
+            <v-card-text>
+                <p>{{ room.hotel.name }}</p>
+                <p>{{ formatDate(selectedStartDate) }} - {{ formatDate(selectedEndDate) }}</p>
+                <p>Room: {{ room.roomNumber }}</p>
+                <p class="mt-8">If you'd like to continue, please enter the guest count:</p>
+
+                <v-form
+                    ref="form"
+                >
+                    <v-text-field
+                        v-model="guestCount"
+                        :rules="[isRequired('Guest count'), max('Guest count', room.capacity), min('Guest count', 0)]"
+                        class="mt-4"
+                        label="Guest count"
+                        type="number"
+                        variant="underlined"
+                    >
+                    </v-text-field>
+                </v-form>
+            </v-card-text>
+
+            <v-card-actions>
+                <v-btn color="info" @click="reserve()">
+                    Reserve
+                </v-btn>
+
+                <v-btn color="error" @click="handeCloseDialogReservation()">
+                    Close
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <v-container fluid>
         <v-col cols="12" sm="12">
             <v-row class="d-flex justify-center mb-10 mt-10">
@@ -63,6 +106,7 @@
   
 <script setup>
     import { apiRequest } from '@/utils/api';
+    import { isRequired, max, min } from '@/utils/rules';
     import { ref, computed, onMounted } from 'vue';
     import { showError } from '@/utils/snackbar';
     import { useAuth } from '@/utils/auth';
@@ -80,6 +124,9 @@
     const currentMonth = ref(today.getMonth());
 
     const calendarDays = ref(getCalendarDays(currentYear.value, currentMonth.value));
+    const dialogReservation = ref(false);
+    const form = ref(null);
+    const guestCount = ref(0);
     const isAuthenticated = ref(false);
     const reservedDates = ref([]);
     const room = ref({});
@@ -88,6 +135,15 @@
 
     loadRoom();
     loadReservationsForMonth(currentYear.value, currentMonth.value);
+
+    onMounted(async () => {
+        isAuthenticated.value = await auth.isAuthenticated();
+    });
+
+    function handeCloseDialogReservation() {
+        dialogReservation.value = false;
+        guestCount.value = 0;
+    }
 
     async function loadRoom() {
         try {
@@ -105,7 +161,7 @@
         }
     }
 
-    async function loadReservationsForMonth(year, month) {
+    async function loadReservationsForMonth(year, month) {        
         const fromDate = new Date(year, month, 1).toISOString().split('T')[0];
         const toDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
@@ -131,8 +187,6 @@
 
                 return dates;
             });
-
-            console.log('Reserved Dates:', reservedDates.value);
         } catch (e) {
             if (e?.response?.data) {
                 showError(`Could not load reservations: ${e.response.data}`);
@@ -142,9 +196,9 @@
         }
     }
 
-    onMounted(async () => {
-        isAuthenticated.value = await auth.isAuthenticated();
-    });
+    function formatDate(date) {
+        return new Date(date).toLocaleDateString();
+    }
 
     function getCalendarDays(year, month) {
         const firstDay = new Date(year, month, 1);
@@ -180,10 +234,12 @@
 
     function goToNextMonth() {
         currentMonth.value += 1;
+        
         if (currentMonth.value > 11) {
             currentMonth.value = 0;
             currentYear.value += 1;
         }
+        
         updateCalendarDays();
     }
 
@@ -200,6 +256,10 @@
         if (selectedStartDate.value && !selectedEndDate.value) {
             const range = getDatesInRange(selectedStartDate.value, date);
             return range.every(d => !isReserved(d));
+        }
+
+        if (selectedStartDate.value && selectedEndDate.value) {
+            return true;
         }
 
         return false;
@@ -264,37 +324,45 @@
         };
     }
 
-    async function handleReservation() {
-        if (!selectedStartDate.value || !selectedEndDate.value) {
-            showError('Please select a start and end date.');
-            return;
-        }
+    function handleReservation() {
+        dialogReservation.value = true;
+    }
 
-        const token = await auth.getToken();
+    async function reserve() {
+		const isValid = (await form.value.validate()).valid;
 
-        if (!token) {
-            showError('Could not create reservation. You are not authenticated.');
-            return;
-        }
+        if (isValid) {
+            if (!selectedStartDate.value || !selectedEndDate.value) {
+                showError('Please select a start and end date.');
+                return;
+            }
 
-        try {
-            await apiRequest({
-                path: '/reservations',
-                method: 'POST',
-                data: {
-                    checkInDate: selectedStartDate.value.toISOString(),
-                    checkOutDate: selectedEndDate.value.toISOString(),
-                    guestCount: 1, //fix later
-                    roomId: roomId
-                },
-                token: token
-            });
+            const token = await auth.getToken();
 
-            resetSelection();
-            location.reload();
-        } catch (e) {
-            showError('Failed to create reservation.');
-        }
+            if (!token) {
+                showError('Could not create reservation. You are not authenticated.');
+                return;
+            }
+
+            try {
+                await apiRequest({
+                    path: '/reservations',
+                    method: 'POST',
+                    data: {
+                        checkInDate: selectedStartDate.value.toISOString(),
+                        checkOutDate: selectedEndDate.value.toISOString(),
+                        guestCount: guestCount.value,
+                        roomId: roomId
+                    },
+                    token: token
+                });
+
+                resetSelection();
+                location.reload();
+            } catch (e) {
+                showError('Failed to create reservation.');
+            }
+            }
     }
 
     function resetSelection() {

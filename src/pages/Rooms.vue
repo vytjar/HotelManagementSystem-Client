@@ -1,6 +1,6 @@
 <template>
     <v-container>
-        <v-row class="d-flex justify-center mb-10 mt-10 pa-10">
+        <v-row class="d-flex justify-center mb-5 mt-5 pa-10">
             <h1>Rooms of the {{ hotel.name }} hotel</h1>
         </v-row>
 
@@ -12,12 +12,12 @@
                 md="4"
                 sm="6"
             >
-                <v-card class="mb-4">
+                <v-card class="mb-4" rounded>
                     <v-card-title>Room {{ room.roomNumber }}</v-card-title>
 
                     <v-card-text>
                         <p><strong>Capacity:</strong> {{ room.capacity }}</p>
-                        <p><strong>Reservations:</strong> {{ room.reservations.length }}</p>
+                        <!-- <p><strong>Reservations:</strong> {{ room.reservations.length }}</p> -->
                     </v-card-text>
 
                     <v-card-actions>

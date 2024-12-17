@@ -1,7 +1,7 @@
 <template>
-    <v-container class="ma-4 pa-4" fluid>
+    <v-container fluid>
         <v-row>
-            <v-col mb-3>
+            <v-col cols="12" sm="6" md="3">
                 <v-text-field
                     v-model="filters.username"
                     label="Username"
@@ -11,7 +11,7 @@
                 />
             </v-col>
             
-            <v-col mb-3>
+            <v-col cols="12" sm="6" md="3">
                 <v-text-field
                     v-model="filters.email"
                     label="Email"
@@ -21,7 +21,7 @@
                 />
             </v-col>
 
-            <v-col mb-3>
+            <v-col cols="12" sm="6" md="3">
                 <v-text-field
                     v-model="filters.name"
                     label="Name"
@@ -31,7 +31,7 @@
                 />
             </v-col>
 
-            <v-col mb-3>
+            <v-col cols="12" sm="6" md="3">
                 <v-text-field
                     v-model="filters.surname"
                     label="Surname"
@@ -46,7 +46,7 @@
             :headers="headers"
             :items="users"
             :loading="loading"
-            class="pl-4 pt-4"
+            class="pa-4"
         >
             <template v-slot:item="{ item }">
                 <tr @click="openUserInfo(item)" class="cursor-pointer">
