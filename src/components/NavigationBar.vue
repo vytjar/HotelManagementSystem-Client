@@ -1,30 +1,36 @@
 <template>
     <v-app-bar app>
-        <v-btn class="ml-2" text to="/">Home</v-btn>
-        <v-btn class="ml-2" text to="/hotels">Hotels</v-btn>
-        <v-spacer></v-spacer>
-        <div v-if="isAuthenticated" style="height: 100%;">
-            <v-btn text to="/users">Users</v-btn>
-            <v-btn text to="/user">Profile</v-btn>
-            <v-btn @click="logOut">Log out</v-btn>
-        </div>
+        <NavigationButton icon="mdi-city" to="/hotels">Hotels</NavigationButton>
         
+        <v-spacer></v-spacer>
+        
+        <div v-if="isAuthenticated" style="height: 100%;">
+            <NavigationButton icon="mdi-account-multiple-outline" to="/users">Users</NavigationButton>
+            <NavigationButton icon="mdi-account-outline" to="/user">Profile</NavigationButton>
+            <NavigationButton icon="mdi-logout-variant" @click="logOut">Log out</NavigationButton>
+        </div>
+
         <div v-else style="height: 100%;">
-            <v-btn text to="/login">Login</v-btn>
-            <v-btn class="mr-2" text to="/register">Register</v-btn>
+            <NavigationButton icon="mdi-login-variant" to="/login">Login</NavigationButton>
+            <NavigationButton icon="mdi-account-plus-outline" to="/register">Register</NavigationButton>
         </div>
     </v-app-bar>
 </template>
 
 <script setup>
+    import NavigationButton from './NavigationButton.vue';
     import { useAuth } from '@/utils/auth';
+    import { useRouter } from 'vue-router';
 
     const auth = useAuth();
-
+    const router = useRouter();
     const isAuthenticated = ref(false);
 
-    function logOut() {
-        auth.logOut();
+    async function logOut() {
+        await auth.logOut();
+        
+        await router.push('/');
+
         location.reload();
     }
 

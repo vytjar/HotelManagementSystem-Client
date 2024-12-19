@@ -1,13 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '@/pages/Home.vue';
 import Login from '@/pages/Login.vue';
 import Register from '@/pages/Register.vue';
 
 const routes = [
 	{
-		component: HomePage,
-		name: 'Home',
 		path: '/',
+		redirect: '/hotels',
 	},
 	{
 		component: () => import('@/pages/Hotels.vue'),

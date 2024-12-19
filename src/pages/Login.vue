@@ -32,7 +32,7 @@
 						block
 						@click="handleLogin"
 					>
-					Login
+						Login
 					</v-btn>
 				</v-form>
 			</v-card-text>
@@ -44,7 +44,7 @@
     import { apiRequest } from '@/utils/api';
 	import { isRequired } from '@/utils/rules';
     import { ref } from 'vue';
-	import { showSuccess, showError } from '@/utils/snackbar';
+	import { showError } from '@/utils/snackbar';
 	import { useAuth } from '@/utils/auth';
 	import { useRouter } from 'vue-router';
 

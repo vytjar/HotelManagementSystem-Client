@@ -34,7 +34,7 @@
         max-width="500px"
         @after-leave="handeCloseDialogUpdate"
     >
-        <v-card rounded>
+        <v-card v-if="dialogUpdate.reservation" rounded>
             <v-card-title>
                 Updating reservation Reservation
             </v-card-title>
@@ -73,7 +73,7 @@
     </v-dialog>
 
     <v-container v-if="!loading" fluid>
-        <v-sheet class="pa-4 ma-4" rounded>
+        <v-sheet class="pa-4 ma-4" rounded elevation="2">
             <v-row class="ma-4 d-flex justify-space-between align-center">
                 <v-col cols="auto">
                     <h2 class="text-h5 mb-0">User information</h2>
@@ -84,29 +84,38 @@
                         <v-btn
                             v-if="editing"
                             color="primary"
+                            icon
                             outlined
                             class="mr-2"
                             @click="handleUpdateRoles"
                         >
-                            Update
+                            <v-icon icon="mdi-check"/>
                         </v-btn>
 
                         <v-btn
                             v-if="editing"
                             color="error"
+                            icon
                             outlined
                             @click="handleCancelEdit"
                         >
-                            Cancel
+                            <v-icon icon="mdi-cancel"/>
                         </v-btn>
 
                         <v-btn
                             v-else
+                            icon
                             color="primary"
                             outlined
                             @click="editing = !editing"
                         >
-                            Edit
+                            <v-icon>
+                                <img
+                                    src="@/assets/pencil.svg"
+                                    alt="Edit"
+                                    style="filter: invert(100%); max-width: 100%; height: auto;"
+                                />
+                            </v-icon>
                         </v-btn>
                     </template>
                 </v-col>
@@ -160,7 +169,7 @@
             </v-row>
         </v-sheet>
 
-        <v-sheet class="pa-4 ma-4" rounded="">
+        <v-sheet class="pa-4 ma-4" rounded elevation="2">
             <v-row>
                 <v-col cols="12" class="ml-6 mt-4">
                     <h2 class="text-h5 mb-4">User Reservations</h2>
@@ -170,7 +179,7 @@
                     v-for="reservation in user.reservations"
                     :key="reservation.id"
                 >
-                    <v-card outlined class="mb-4">
+                    <v-card outlined class="mb-4" elevation="5">
                         <v-card-text>
                             <v-row>
                                 <v-col cols="12" md="8">

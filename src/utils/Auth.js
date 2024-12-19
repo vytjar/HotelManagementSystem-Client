@@ -29,20 +29,25 @@ async function isAuthenticated() {
     return !!token;
 }
 
-function isInRole(role) {
-    const token = getToken();
+async function isInRole(role) {
+    const token = await getToken();
 
     if (!token) return false;
 
     const decodedToken = jwtDecode(token);
 
     const roles = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+
     return Array.isArray(roles) ? roles.includes(role) : roles === role;
 }
 
-function logOut() {
-    console.log('removing item');
+async function logOut() {
     localStorage.removeItem(TOKEN_KEY);
+
+    await apiRequest({
+        path: '/users/logout',
+        method: 'POST'
+    });
 }
 
 async function refreshToken() {

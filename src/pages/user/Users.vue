@@ -1,10 +1,11 @@
 <template>
     <v-container fluid>
-        <v-row>
+        <v-row class="ml-1 mr-1">
             <v-col cols="12" sm="6" md="3">
                 <v-text-field
                     v-model="filters.username"
                     label="Username"
+                    variant="underlined"
                     @change="load"
                     @click:clear="load"
                     clearable
@@ -15,6 +16,7 @@
                 <v-text-field
                     v-model="filters.email"
                     label="Email"
+                    variant="underlined"
                     @change="load"
                     @click:clear="load"
                     clearable
@@ -25,6 +27,7 @@
                 <v-text-field
                     v-model="filters.name"
                     label="Name"
+                    variant="underlined"
                     @input="load"
                     @click:clear="load"
                     clearable
@@ -35,6 +38,7 @@
                 <v-text-field
                     v-model="filters.surname"
                     label="Surname"
+                    variant="underlined"
                     @input="load"
                     @click:clear="load"
                     clearable
@@ -47,6 +51,7 @@
             :items="users"
             :loading="loading"
             class="pa-4"
+            elevation="10"
         >
             <template v-slot:item="{ item }">
                 <tr @click="openUserInfo(item)" class="cursor-pointer">
