@@ -20,7 +20,7 @@
                 >
                     <v-text-field
                         v-model="guestCount"
-                        :rules="[isRequired('Guest count'), max('Guest count', room.capacity), min('Guest count', 0)]"
+                        :rules="[isRequired('Guest count'), max('Guest count', room.capacity), minIncluding('Guest count', 0)]"
                         class="mt-4"
                         label="Guest count"
                         type="number"
@@ -106,7 +106,7 @@
   
 <script setup>
     import { apiRequest } from '@/utils/api';
-    import { isRequired, max, min } from '@/utils/rules';
+    import { isRequired, max, minIncluding } from '@/utils/rules';
     import { ref, computed, onMounted } from 'vue';
     import { showError } from '@/utils/snackbar';
     import { useAuth } from '@/utils/auth';

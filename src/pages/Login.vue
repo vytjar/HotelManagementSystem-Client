@@ -3,6 +3,7 @@
 		<v-card
 			class="pa-5"
 			width="400px"
+			border
 		>
 			<v-card-title class="justify-center">Login</v-card-title>
 	

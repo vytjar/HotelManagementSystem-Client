@@ -1,15 +1,15 @@
 const patternPassword = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
 
 export function isRequired(field) {
-    return (value) => !!value || `${field} is required.`
+    return (value) => value === 0 || !!value || `${field} is required.`
 }
 
 export function max(field, maxValue) {
-    return (value) => !value || value <= maxValue || `${field} can not be more than ${maxValue}.`
+    return (value) => (!value && value !== 0) || value < maxValue || `${field} can not be more than ${maxValue}.`
 }
 
-export function min(field, minValue) {
-    return (value) => !value || value >= minValue || `${field} can not be lower than ${minValue}.`
+export function minIncluding(field, minValue) {
+    return (value) => (!value && value !== 0) || value > minValue || `${field} can not be ${minValue} or lower.`
 }
 
 export function validateEmail() {

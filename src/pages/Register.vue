@@ -1,6 +1,6 @@
 <template>
 <v-container>
-	<v-card class="pa-5" width="500">
+	<v-card class="pa-5" width="500" border rounded>
 		<v-card-title class="justify-center">Register</v-card-title>
 
 		<v-card-text>

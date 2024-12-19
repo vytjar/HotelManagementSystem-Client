@@ -1,11 +1,36 @@
 <template>
     <v-dialog
         v-if="isAdmin"
-        v-model="dialog.visible"
+        v-model="dialogDelete.visible"
         max-width="400px"
-        @after-leave="handleCloseDialog"
+        @after-leave="handleCloseDialogDelete"
     >
-        <v-card :title="dialog.title" prepend-icon="mdi-city">
+        <v-card prepend-icon="mdi-city" title="Hotel deletion">
+            <v-card-text>
+                {{ dialogDelete.text }}
+            </v-card-text>
+
+            <v-card-actions>
+                <v-spacer></v-spacer>
+
+                <v-btn color="error" @click="handleDelete">
+                    Yes, Delete The Hotel
+                </v-btn>
+
+                <v-btn color="info" text @click="handleCloseDialogDelete">
+                    No, Keep It
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog
+        v-if="isAdmin"
+        v-model="dialogModel.visible"
+        max-width="400px"
+        @after-leave="handleCloseDialogModel"
+    >
+        <v-card :title="dialogModel.title" prepend-icon="mdi-city">
             <v-card-text>
                 <v-form ref="form">
                     <v-text-field
@@ -32,7 +57,7 @@
                         size="x-small"
                         icon
                         outlined
-                        @click="dialog.onClick"
+                        @click="dialogModel.onClick"
                     >
                         <v-icon icon="mdi-check"/>
                     </v-btn>
@@ -43,7 +68,7 @@
                         icon
                         outlined
                         small
-                        @click="handleCloseDialog"
+                        @click="handleCloseDialogModel"
                     >
                         <v-icon icon="mdi-cancel"/>
                     </v-btn>
@@ -76,11 +101,11 @@
                 sm="6"
                 md="4"
             >
-                <v-card class="mb-4">
+                <v-card class="mb-4" border>
                     <v-card-title>{{ hotel.name }}</v-card-title>
                     <v-card-subtitle>{{ hotel.address }}</v-card-subtitle>
 
-                    <v-card-actions class="justify-space-between">
+                    <v-card-actions>
                         <v-btn
                             text
                             color="primary"
@@ -89,19 +114,42 @@
                             View Rooms
                         </v-btn>
 
-                        <v-btn
-                            v-if="isAdmin"
-                            icon
-                            color="primary"
-                            @click="handleOpenDialogUpdate(hotel)"
-                        >
-                            <v-icon>mdi-pencil</v-icon>
-                        </v-btn>
+                        <v-spacer></v-spacer>
+
+                        <template v-if="isAdmin">
+                            <v-btn
+                                icon
+                                color="primary"
+                                @click="handleOpenDialogUpdate(hotel)"
+                            >
+                                <v-icon>mdi-pencil</v-icon>
+                            </v-btn>
+                            
+                            <v-btn
+                                icon
+                                color="error"
+                                @click="handleOpenDialogDelete(hotel)"
+                            >
+                                <v-icon>mdi-delete-outline</v-icon>
+                            </v-btn>
+                        </template>
                     </v-card-actions>
                 </v-card>
             </v-col>
         </v-row>
     </v-container>
+
+    <v-overlay
+        :model-value="loading"
+        class="loading-overlay d-flex align-center justify-center"
+        persistent
+    >
+        <v-progress-circular
+            indeterminate
+            size="70"
+            color="primary"
+        />
+    </v-overlay>
 </template>
 
 <script setup>
@@ -118,12 +166,17 @@
 
     const form = ref(null);
 
-    const dialog = reactive({
+    const dialogDelete = reactive({
+        hotelId: 0,
+        text: '',
+        visible: false
+    });
+
+    const dialogModel = reactive({
         onClick: () => {},
         title: '',
         visible: false
     });
-
 
     const hotels = ref([]);
     const isAdmin = ref(false);
@@ -144,22 +197,33 @@
         }
     });
 
+    const requestsPending = ref(0);
+    const loading = computed(() => requestsPending.value > 0);
+
     loadHotels();
 
-    function handleCloseDialog() {
+    function handleCloseDialogDelete() {
+        dialogDelete.hotelId = 0;
+        dialogDelete.text = '';
+        dialogDelete.visible = false;
+    }
+
+    function handleCloseDialogModel() {
         model.value.address.modelValue = '';
         model.value.id.modelValue = 0;
         model.value.name.modelValue = '';
 
-        dialog.onClick = () => {};
-        dialog.title = '';
-        dialog.visible = false;
+        dialogModel.onClick = () => {};
+        dialogModel.title = '';
+        dialogModel.visible = false;
     }
 
     async function handleCreate() {
 		const isValid = (await form.value.validate()).valid;
 
         if (isValid) {
+            requestsPending.value++;
+
             try {
                 await apiRequest({
                     path: '/hotels',
@@ -178,7 +242,31 @@
                 } else {
                     showError('Could not create hotel.');
                 }
+            } finally {
+                requestsPending.value--;
             }
+        }
+    }
+
+    async function handleDelete() {
+        requestsPending.value++;
+
+        try {
+            await apiRequest({
+                path: `/hotels/${dialogDelete.hotelId}`,
+                method: 'DELETE',
+                token: await auth.getToken()
+            });
+
+            location.reload();
+        } catch (e) {
+            if (e?.response?.data) {
+                showError(`Could not delete hotel: ${e.respone.data}`);
+            } else {
+                showError('Could not delete hotel.');
+            }
+        } finally {
+            requestsPending.value--;
         }
     }
 
@@ -186,6 +274,8 @@
 		const isValid = (await form.value.validate()).valid;
 
         if (isValid) {
+            requestsPending.value++;
+
             try {
                 await apiRequest({
                     path: '/hotels/update',
@@ -205,14 +295,22 @@
                 } else {
                     showError('Could not update hotel.');
                 }
+            } finally {
+                requestsPending.value--;
             }
         }
     }
 
     function handleOpenDialogCreation() {
-        dialog.onClick = handleCreate;
-        dialog.title = 'Hotel creation'
-        dialog.visible = true;
+        dialogModel.onClick = handleCreate;
+        dialogModel.title = 'Hotel creation'
+        dialogModel.visible = true;
+    }
+
+    function handleOpenDialogDelete(hotel) {
+        dialogDelete.hotelId = hotel.id;
+        dialogDelete.text = `Are you sure you want to delete the '${hotel.name}' hotel?`
+        dialogDelete.visible = true;
     }
 
     function handleOpenDialogUpdate(hotel) {
@@ -220,12 +318,14 @@
         model.value.id.modelValue = hotel.id;
         model.value.name.modelValue = hotel.name;
 
-        dialog.onClick = handleUpdate;
-        dialog.title = 'Hotel creation'
-        dialog.visible = true;
+        dialogModel.onClick = handleUpdate;
+        dialogModel.title = 'Hotel update'
+        dialogModel.visible = true;
     }
 
     async function loadHotels() {
+        requestsPending.value++;
+
         try {
             hotels.value = await apiRequest({
                 path: '/hotels',
@@ -238,6 +338,8 @@
             } else {
                 showError('Could not load hotels');
             }
+        } finally {
+            requestsPending.value--;
         }
     }
 

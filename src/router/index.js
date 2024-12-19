@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from '@/pages/Login.vue';
 import Register from '@/pages/Register.vue';
+import { roles } from '@/constants/roles';
+import { useAuth } from '@/utils/auth';
 
 const routes = [
 	{
@@ -33,6 +35,11 @@ const routes = [
 		path: '/hotels/:hotelId/rooms'
 	},
 	{
+		component: () => import('@/pages/Unauthorized.vue'),
+		name: 'Unauthorized',
+		path: '/unauthorized'
+	},
+	{
 		component: () => import('@/pages/user/User.vue'),
 		name: 'User',
 		path: '/user'
@@ -40,32 +47,39 @@ const routes = [
 	{
 		component: () => import('@/pages/user/User.vue'),
 		name: 'UserDetails',
-		path: '/users/:userId'
+		path: '/users/:userId',
+		meta: {
+			roles: [roles.ADMIN]
+		}
 	},
 	{
 		component: () => import('@/pages/user/Users.vue'),
 		name: 'Users',
-		path: '/users'
+		path: '/users',
+		meta: {
+			roles: [roles.ADMIN]
+		}
 	}
 ];
 
+const auth = useAuth();
+
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
-	routes,
+	routes
 });
 
-// // Navigation Guards for Authentication and Role-based Access
-// router.beforeEach((to, from, next) => {
-//   const isAuthenticated = !!localStorage.getItem('auth-token'); // Example: Use your actual auth check
-//   const userRole = localStorage.getItem('user-role'); // Example: Fetch user role from storage
+router.beforeEach(async (to, from, next) => {
+    const roles = to.meta.roles;
 
-//   if (to.meta.requiresAuth && !isAuthenticated) {
-//     next('/login');
-//   } else if (to.meta.roles && !to.meta.roles.includes(userRole)) {
-//     next('/'); // Redirect to home if unauthorized
-//   } else {
-//     next();
-//   }
-// });
+    if (roles) {
+		const hasRole = await Promise.all(roles.map(role => auth.isInRole(role)));
+		if (!hasRole.includes(true)) {
+			return next({ name: 'Unauthorized' });
+		}
+    }
+
+    next();
+});
 
 export default router;

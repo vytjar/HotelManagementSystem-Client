@@ -1,12 +1,12 @@
 <template>
 	<v-app> 
-		<NavigationBar />
+		<NavigationBar color="primary" />
 
 		<v-main>
 			<router-view :key="$route.fullPath"></router-view>
 		</v-main>
 		
-		<AppFooter />
+		<AppFooter color="primary" />
 
 		<Snackbar />
 	</v-app>

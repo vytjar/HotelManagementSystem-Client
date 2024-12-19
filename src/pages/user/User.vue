@@ -50,7 +50,7 @@
                 >
                     <v-text-field
                         v-model="dialogUpdate.guestCount"
-                        :rules="[isRequired('Guest count'), max('Guest count', dialogUpdate.reservation.room?.capacity ?? 0), min('Guest count', 0)]"
+                        :rules="[isRequired('Guest count'), max('Guest count', dialogUpdate.reservation.room?.capacity ?? 0), minIncluding('Guest count', 0)]"
                         class="mt-4"
                         label="Guest count"
                         type="number"
@@ -73,10 +73,10 @@
     </v-dialog>
 
     <v-container v-if="!loading" fluid>
-        <v-sheet class="pa-4 ma-4" rounded elevation="2">
+        <v-sheet class="pa-4 ma-4" elevation="2" rounded border>
             <v-row class="ma-4 d-flex justify-space-between align-center">
                 <v-col cols="auto">
-                    <h2 class="text-h5 mb-0">User information</h2>
+                    <h2 class="text-h5 mb-0">User Information</h2>
                 </v-col>
 
                 <v-col cols="auto" class="d-flex">
@@ -122,54 +122,55 @@
             </v-row>
 
             <v-row class="ma-4">
-                <v-col cols="12" md="6">
-                    <div class="info-section">
+                <v-col cols="12" class="d-flex flex-column align-center">
+                    <v-avatar size="250" class="mb-4">
+                        <img width="70%" src="@/assets/avatar.png" alt="User Avatar" />
+                    </v-avatar>
+                    <div class="info-section text-left">
                         <div class="info-item mb-2 d-flex">
-                            <span class="label font-weight-bold mr-2">Username:</span>
+                            <span class="label font-weight-bold">Username:</span>
                             <span class="value">{{ user.username }}</span>
                         </div>
 
                         <div class="info-item mb-2 d-flex">
-                            <span class="label font-weight-bold mr-2">Name:</span>
+                            <span class="label font-weight-bold">Name:</span>
                             <span class="value">{{ user.name }}</span>
                         </div>
 
                         <div class="info-item mb-2 d-flex">
-                            <span class="label font-weight-bold mr-2">Surname:</span>
+                            <span class="label font-weight-bold">Surname:</span>
                             <span class="value">{{ user.surname }}</span>
                         </div>
 
-                        <div class="info-item d-flex">
-                            <span class="label font-weight-bold mr-2">Email:</span>
+                        <div class="info-item mb-2 d-flex">
+                            <span class="label font-weight-bold">Email:</span>
                             <span class="value">{{ user.email }}</span>
                         </div>
-                    </div>
-                </v-col>
 
-                <v-col
-                    cols="12"
-                    md="6"
-                    class="d-flex align-center justify-center"
-                >
-                    <v-select
-                        v-if="userId"
-                        v-model="selectedRoles"
-                        :items="Object.values(roles)"
-                        class="roles-dropdown"
-                        label="Roles"
-                        variant="underlined"
-                        chips
-                        clearable
-                        dense
-                        multiple
-                        outlined
-                        :disabled="!editing"
-                    />
+                        <div
+                            v-if="userId"
+                            class="info-item mb-2 d-flex align-center"
+                        >
+                            <span class="label font-weight-bold">Roles:</span>
+                            
+                            <v-select
+                                v-model="selectedRoles"
+                                :disabled="!editing"
+                                :menu-icon="editing ? 'mdi-chevron-down' : ''"
+                                :items="Object.values(roles)"
+                                class="roles-dropdown"
+                                variant="flat"
+                                chips
+                                hide-details
+                                multiple
+                            />
+                        </div>
+                    </div>
                 </v-col>
             </v-row>
         </v-sheet>
 
-        <v-sheet class="pa-4 ma-4" rounded elevation="2">
+        <v-sheet class="pa-4 ma-4" elevation="2" border rounded>
             <v-row>
                 <v-col cols="12" class="ml-6 mt-4">
                     <h2 class="text-h5 mb-4">User Reservations</h2>
@@ -179,7 +180,7 @@
                     v-for="reservation in user.reservations"
                     :key="reservation.id"
                 >
-                    <v-card outlined class="mb-4" elevation="5">
+                    <v-card class="mb-4" elevation="" border>
                         <v-card-text>
                             <v-row>
                                 <v-col cols="12" md="8">
@@ -251,7 +252,7 @@
 
 <script setup>
     import { apiRequest } from '@/utils/api';
-    import { isRequired, max, min } from '@/utils/rules';
+    import { isRequired, max, minIncluding } from '@/utils/rules';
     import { ref, computed, reactive } from 'vue';
     import { roles } from '@/constants/roles';
     import { showError } from '@/utils/snackbar';
@@ -265,7 +266,6 @@
 
     const editing = ref(false);
     const form = ref(null);
-    // const guestCount = ref(0);
     const user = ref({});
     const requestsPending = ref(0);
     const selectedRoles = ref([]);
@@ -453,8 +453,7 @@
     }
 
     .roles-dropdown {
-        width: 100%;
-        max-width: 300px;
+        width: 170px;
     }
 
     .v-card {
@@ -464,5 +463,13 @@
     .v-card-title {
         font-size: 18px;
         font-weight: bold;
+    }
+</style>
+
+<style>
+    .roles-dropdown {
+        .v-field--disabled {
+            opacity: 1;
+        }
     }
 </style>
