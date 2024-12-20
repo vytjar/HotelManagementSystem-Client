@@ -5,7 +5,7 @@ export function isRequired(field) {
 }
 
 export function max(field, maxValue) {
-    return (value) => (!value && value !== 0) || value < maxValue || `${field} can not be more than ${maxValue}.`
+    return (value) => (!value && value !== 0) || value <= maxValue || `${field} can not be more than ${maxValue}.`
 }
 
 export function minIncluding(field, minValue) {

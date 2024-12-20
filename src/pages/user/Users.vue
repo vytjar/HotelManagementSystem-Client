@@ -103,8 +103,6 @@
     load();
 
     function openUserInfo(user) {
-        console.log(user);
-
         if (user && user.id) {
             router.push(`/users/${user.id}`);
         }

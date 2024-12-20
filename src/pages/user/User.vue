@@ -453,7 +453,7 @@
     }
 
     .roles-dropdown {
-        width: 170px;
+        width: 175px;
     }
 
     .v-card {
